@@ -2,6 +2,8 @@ interface VroParameterList {
 	[name: string]: VroParameter;
 }
 
+// TODO: Add interface for the new BindingExport Decorator in here
+
 interface VroParameter {
 	type: string;
 	title?: string;
@@ -382,7 +384,7 @@ interface VroSwitchCase {
 	target: string;
 	variable?: string;
 	type?: string;
-	comparator?: string;	
+	comparator?: string;
 }
 
 interface VroSwitchItemConfiguration {

@@ -23,6 +23,7 @@ You can use the method decorators to define various canvas items that will be in
    - [`@AsyncWorkflowItem`](#asyncworkflowitem)
    - [`@ActionItem`](#actionitem)
    - [`@UserInteractionWorkflowItem`](#userinteractionworkflowitem)
+   - [`@BindingExport`](#bindingexport)
 4. [Custom Form support](#custom-form-support)
 5. [Example Workflow](#example-workflow)
 
@@ -704,6 +705,26 @@ export class UserInteractionWorkflow {
 The example above would generate the following workflow.
 
 [![User Interaction Workflow](images/User_Interaction_Canvas_Item_Workflow.png)](images/User_Interaction_Canvas_Item_Workflow.png)
+
+#### `@BindingExport`
+
+This decorator is used to set an alternative `exportName` for an input or output. This is here for easier importing of existing
+workflows into the typescript with minimal changes. In the vRO User Interface it is possible to bind a workflow attribute (???: Is it called
+an attribute in vRO?) to a name that doesn't match the expected input name.
+
+The decorator is meant ot be used together with any other type of workflow item that can take an input.
+
+TODO: Screenshot of the issue
+
+##### Supported Parameters
+
+- `bindName` - The name of the input / output of the target workflow
+- `exportName` - The name of the attribute / input / output in the current workflow. this is the value as the variable name of
+any following `@In` or `@Out` decorated typescript parameters
+
+Reminder that this still requires the `@In` and `@Out` decorators for the parameters. This is the same way we do it for other items.
+
+Note that, if omitted, the `exportName` defaults to the name of the corresponding function parameter.
 
 ### Custom Form Support
 

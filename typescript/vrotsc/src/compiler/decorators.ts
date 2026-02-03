@@ -72,6 +72,7 @@ export interface WorkflowItemDescriptor<T = any> {
 	strategy: CanvasItemDecoratorStrategy;
 	target: string; // Points to which item this item is connected to by name
 	canvasItemPolymorphicBag: T;
+	bindingExportNames?: Record<string, string>;
 	polyglot?: PolyglotDescriptor;
 	parent: WorkflowDescriptor;
 }
@@ -89,14 +90,14 @@ export interface VroSwitchCase {
 	target: string;
 	variable?: string;
 	type?: string;
-	comparator?: string;	
+	comparator?: string;
 }
 
 export interface CanvasItemPolymorphicBagForSwitch {
 	target: string;
 	cases: VroSwitchCase[],
 	defaultTarget?: string;
-	exception?: string;	
+	exception?: string;
 }
 
 export interface WorkflowParameter {

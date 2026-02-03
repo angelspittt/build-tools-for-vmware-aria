@@ -24,7 +24,7 @@ import { transformShims, transformShimsBefore } from "../../codeTransformers/shi
 import { getPropertyName } from "../../helpers/node";
 import { collectFactsBefore } from "../../metaTransformers/facts";
 import { transformSourceFile } from "../../scripts/scripts";
-import { buildWorkflowDecorators, registerMethodArgumentDecorators, registerMethodDecorators, registerPolyglotDecorators } from "./decorators";
+import { buildWorkflowDecorators, registerBindingDecorators, registerMethodArgumentDecorators, registerMethodDecorators, registerPolyglotDecorators } from "./decorators";
 import { mergeWorkflowXml, printPolyglotCode, printWorkflowXml } from "./presentation";
 
 import * as ts from "typescript";
@@ -221,6 +221,7 @@ function registerWorkflowItem(itemInfo: WorkflowItemDescriptor, methodNode: ts.M
     registerPolyglotDecorators(methodNode, itemInfo);
     registerMethodDecorators(methodNode, itemInfo);
     registerMethodArgumentDecorators(methodNode, itemInfo);
+    registerBindingDecorators(methodNode, itemInfo);
 }
 
 /**
@@ -283,6 +284,7 @@ function createWorkflowItemDescriptor(propertyNameNode: ts.PropertyName, workflo
         target: null,
         strategy: null,
         canvasItemPolymorphicBag: {},
+        bindingExportNames: {},
         parent: workflowInfo
     };
 }

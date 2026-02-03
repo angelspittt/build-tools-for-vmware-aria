@@ -40,12 +40,21 @@ import WorkflowItemDecoratorStrategy from "./decorators/workflowItemDecoratorStr
 export function registerMethodDecorators(methodNode: ts.MethodDeclaration, itemInfo: WorkflowItemDescriptor) {
 	let decorators = ts.getDecorators(methodNode) as ts.Decorator[] || [];
 
+	// Only decorators whose identifier matches a WorkflowItemType are considered
+	// item decorators. Other method decorators (e.g. BindingExport) are handled
+	// separately and must not be passed to getItemStrategy.
+	let itemDecorators = decorators.filter(decoratorNode => {
+		const decoratorExpressionNode = decoratorNode.expression as ts.CallExpression;
+		const identifierText = getIdentifierTextOrNull(decoratorExpressionNode.expression);
+		return identifierText && Object.values(WorkflowItemType).includes(identifierText as WorkflowItemType);
+	});
+
 	if (
-		!decorators
-		|| decorators?.length === 0
-		|| (decorators.length === 1 && getItemStrategy(decorators[0]).getDecoratorType() === WorkflowItemType.RootItem)
+		!itemDecorators
+		|| itemDecorators.length === 0
+		|| (itemDecorators.length === 1 && getItemStrategy(itemDecorators[0]).getDecoratorType() === WorkflowItemType.RootItem)
 	) {
-		decorators.push(
+		itemDecorators.push(
 			ts.factory.createDecorator(
 				ts.factory.createCallExpression(
 					ts.factory.createIdentifier(WorkflowItemType.Item),
@@ -58,7 +67,7 @@ export function registerMethodDecorators(methodNode: ts.MethodDeclaration, itemI
 		);
 	}
 
-	for (const decoratorNode of decorators) {
+	for (const decoratorNode of itemDecorators) {
 		const itemStrategy = getItemStrategy(decoratorNode);
 		if (itemStrategy.getDecoratorType() !== WorkflowItemType.RootItem) {
 			itemInfo.strategy = itemStrategy;
@@ -66,6 +75,57 @@ export function registerMethodDecorators(methodNode: ts.MethodDeclaration, itemI
 
 		itemStrategy.registerItemArguments(itemInfo, decoratorNode);
 	}
+}
+
+/**
+ * Registers binding decorators on a workflow item method.
+ *
+ * This supports a standalone decorator of the form:
+ *
+ *   @BindingExport("bindName", "exportName")
+ *
+ * where `bindName` corresponds to the name of a parameter on the decorated
+ * method. The specified exportName will be used as the `export-name` on
+ * generated workflow item bindings for that parameter.
+ */
+export function registerBindingDecorators(methodNode: ts.MethodDeclaration, itemInfo: WorkflowItemDescriptor) {
+	const decorators = ts.getDecorators(methodNode) as ts.Decorator[] || [];
+	if (!decorators?.length) {
+		return;
+	}
+
+	decorators.forEach(decoratorNode => {
+		const callExpNode = decoratorNode.expression as ts.CallExpression;
+		const identifierText = getIdentifierTextOrNull(callExpNode.expression);
+		if (identifierText !== "BindingExport") {
+			return;
+		}
+
+		const [bindNameArg, exportNameArg] = callExpNode.arguments || [];
+		if (!bindNameArg || !exportNameArg) {
+			return;
+		}
+
+		if (
+			bindNameArg.kind !== ts.SyntaxKind.StringLiteral ||
+			exportNameArg.kind !== ts.SyntaxKind.StringLiteral
+		) {
+			return;
+		}
+
+		const bindName = (bindNameArg as ts.StringLiteral).text;
+		const exportName = (exportNameArg as ts.StringLiteral).text;
+
+		if (!bindName || !exportName) {
+			return;
+		}
+
+		if (!itemInfo.bindingExportNames) {
+			itemInfo.bindingExportNames = {};
+		}
+
+		itemInfo.bindingExportNames[bindName] = exportName;
+	});
 }
 
 /**
@@ -320,6 +380,10 @@ function buildWorkflowDecoratorParameters(
 			switch (propName) {
 				case "type": {
 					parameter.type = (<ts.StringLiteral>property.initializer).text;
+					break;
+				}
+				case "exportName": {
+					parameter.exportName = (<ts.StringLiteral>property.initializer).text;
 					break;
 				}
 				case "title": {
